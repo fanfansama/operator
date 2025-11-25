@@ -1,0 +1,20 @@
+# Go build
+/bin/
+*.out
+*.test
+
+# Local caches
+.gocache/
+.gomodcache/
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Vendor/dep
+vendor/
+
+# Local env overrides
+local.env

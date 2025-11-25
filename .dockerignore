@@ -1,0 +1,16 @@
+# Ignore git metadata
+.git
+.gitignore
+
+# Build outputs
+bin
+*.out
+*.test
+
+# Local caches
+.gocache
+.gomodcache
+
+# Docs & manifests not needed in image
+config
+README.md

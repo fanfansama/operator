@@ -1,0 +1,9 @@
+---
+apiVersion: fgtech.fgtech.io/v1
+kind: Fgtech
+metadata:
+  name: sample2
+spec:
+  version: "1.0.0"
+  image: nginx:latest
+  path: "/sample2"
