@@ -30,9 +30,16 @@ spec:
                 image:
                   type: string
                   description: Container image reference
-                path:
+                extrapath:
                   type: string
-                  description: Optional URL path, defaults to resource name
+                  description: Optional URL base path; the instance name is appended
+                ttlSeconds:
+                  type: integer
+                  format: int64
+                  description: Optional TTL in seconds for the workload; defaults to 3600 or env override
+                serviceaccount:
+                  type: string
+                  description: Optional service account name; defaults to env FGTECH_POD_SERVICEACCOUNT or \"default\"
           required:
             - spec
       additionalPrinterColumns:
@@ -42,6 +49,12 @@ spec:
         - name: Image
           type: string
           jsonPath: .spec.image
-        - name: Path
+        - name: ExtraPath
           type: string
-          jsonPath: .spec.path
+          jsonPath: .spec.extrapath
+        - name: TTL
+          type: integer
+          jsonPath: .spec.ttlSeconds
+        - name: ServiceAccount
+          type: string
+          jsonPath: .spec.serviceaccount

@@ -25,12 +25,16 @@ import (
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 type FgtechReconciler struct {
 	client.Client
-	Scheme           *runtime.Scheme
-	Log              logr.Logger
-	podMgr           *pod.Manager
-	ingressMgr       *ingress.Manager
-	IngressHost      string
-	IngressTLSSecret string
+	Scheme            *runtime.Scheme
+	Log               logr.Logger
+	podMgr            *pod.Manager
+	ingressMgr        *ingress.Manager
+	IngressHost       string
+	IngressTLSSecret  string
+	IngressClassName  string
+	DefaultTTLSeconds int64
+	DefaultSA         string
+	DefaultPodPort    int32
 }
 
 func (r *FgtechReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -88,14 +92,14 @@ func (r *FgtechReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *FgtechReconciler) podManager() *pod.Manager {
 	if r.podMgr == nil {
-		r.podMgr = pod.NewManager(r.Client, r.Scheme)
+		r.podMgr = pod.NewManager(r.Client, r.Scheme, r.DefaultTTLSeconds, r.DefaultSA, r.DefaultPodPort)
 	}
 	return r.podMgr
 }
 
 func (r *FgtechReconciler) ingressManager() *ingress.Manager {
 	if r.ingressMgr == nil {
-		r.ingressMgr = ingress.NewManager(r.Client, r.IngressHost, r.IngressTLSSecret)
+		r.ingressMgr = ingress.NewManager(r.Client, r.IngressHost, r.IngressTLSSecret, r.IngressClassName)
 	}
 	return r.ingressMgr
 }

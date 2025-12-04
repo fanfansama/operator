@@ -19,9 +19,11 @@ var (
 
 // FgtechSpec defines the desired state of Fgtech
 type FgtechSpec struct {
-	Version string `json:"version"`
-	Image   string `json:"image"`
-	Path    string `json:"path,omitempty"`
+	Version        string `json:"version"`
+	Image          string `json:"image"`
+	ExtraPath      string `json:"extrapath,omitempty"`
+	TTLSeconds     *int64 `json:"ttlSeconds,omitempty"`
+	ServiceAccount string `json:"serviceaccount,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -29,6 +31,9 @@ type FgtechSpec struct {
 // +kubebuilder:resource:path=fgteches,scope=Namespaced
 // +kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.spec.version`
 // +kubebuilder:printcolumn:name="Image",type=string,JSONPath=`.spec.image`
+// +kubebuilder:printcolumn:name="ExtraPath",type=string,JSONPath=`.spec.extrapath`
+// +kubebuilder:printcolumn:name="TTL",type=integer,JSONPath=`.spec.ttlSeconds`
+// +kubebuilder:printcolumn:name="ServiceAccount",type=string,JSONPath=`.spec.serviceaccount`
 type Fgtech struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

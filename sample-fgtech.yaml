@@ -6,4 +6,6 @@ metadata:
 spec:
   version: "1.0.0"
   image: nginx:latest
-  path: "/sample2"
+  extrapath: "/samples"
+  ttlSeconds: 3600
+  serviceaccount: "default"

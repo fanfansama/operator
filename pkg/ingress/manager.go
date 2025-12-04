@@ -27,13 +27,14 @@ const (
 
 // Manager ensures a single ingress per namespace aggregates all Fgtech routes.
 type Manager struct {
-	client    client.Client
-	host      string
-	tlsSecret string
+	client           client.Client
+	host             string
+	tlsSecret        string
+	ingressClassName string
 }
 
-func NewManager(c client.Client, host, tlsSecret string) *Manager {
-	return &Manager{client: c, host: host, tlsSecret: tlsSecret}
+func NewManager(c client.Client, host, tlsSecret, ingressClassName string) *Manager {
+	return &Manager{client: c, host: host, tlsSecret: tlsSecret, ingressClassName: ingressClassName}
 }
 
 // SyncNamespace reconciles the ingress for the provided namespace.
@@ -67,7 +68,7 @@ func (m *Manager) SyncNamespace(ctx context.Context, namespace string, log logr.
 
 	if m.needsUpdate(&ing, routes) {
 		updated := ing.DeepCopy()
-		m.applySpec(updated, namespace, routes)
+		m.applySpec(updated, routes)
 		if err := m.client.Update(ctx, updated); err != nil {
 			return err
 		}
@@ -86,7 +87,7 @@ func (m *Manager) collectRoutes(ctx context.Context, namespace string) ([]networ
 	paths := make([]networkingv1.HTTPIngressPath, 0, len(list.Items))
 	for i := range list.Items {
 		item := list.Items[i]
-		pathValue := normalizePath(item.Spec.Path, item.Name)
+		pathValue := buildRoutePath(item.Spec.ExtraPath, item.Name)
 		backend := networkingv1.IngressBackend{
 			Service: &networkingv1.IngressServiceBackend{
 				Name: pod.ServiceNameFor(&item),
@@ -117,11 +118,14 @@ func (m *Manager) buildIngress(namespace string, routes []networkingv1.HTTPIngre
 			},
 		},
 	}
-	m.applySpec(ing, namespace, routes)
+	m.applySpec(ing, routes)
 	return ing
 }
 
-func (m *Manager) applySpec(ing *networkingv1.Ingress, namespace string, routes []networkingv1.HTTPIngressPath) {
+func (m *Manager) applySpec(ing *networkingv1.Ingress, routes []networkingv1.HTTPIngressPath) {
+	if m.ingressClassName != "" {
+		ing.Spec.IngressClassName = &m.ingressClassName
+	}
 	ing.Spec.DefaultBackend = &networkingv1.IngressBackend{
 		Service: &networkingv1.IngressServiceBackend{
 			Name: defaultBackendName,
@@ -161,11 +165,17 @@ func (m *Manager) applySpec(ing *networkingv1.Ingress, namespace string, routes 
 
 func (m *Manager) needsUpdate(ing *networkingv1.Ingress, routes []networkingv1.HTTPIngressPath) bool {
 	desired := &networkingv1.Ingress{}
-	m.applySpec(desired, ing.Namespace, routes)
+	m.applySpec(desired, routes)
 	return !ingressEqual(ing, desired)
 }
 
 func ingressEqual(existing, desired *networkingv1.Ingress) bool {
+	if (existing.Spec.IngressClassName == nil) != (desired.Spec.IngressClassName == nil) {
+		return false
+	}
+	if existing.Spec.IngressClassName != nil && desired.Spec.IngressClassName != nil && *existing.Spec.IngressClassName != *desired.Spec.IngressClassName {
+		return false
+	}
 	if existing.Spec.DefaultBackend == nil || desired.Spec.DefaultBackend == nil {
 		return false
 	}
@@ -233,15 +243,13 @@ func ingressEqual(existing, desired *networkingv1.Ingress) bool {
 	return true
 }
 
-func normalizePath(path, fallback string) string {
-	trimmed := strings.TrimSpace(path)
-	if trimmed == "" {
-		trimmed = fallback
+func buildRoutePath(extraPath, name string) string {
+	base := strings.TrimSpace(extraPath)
+	base = strings.Trim(base, "/")
+	if base == "" {
+		return "/" + name
 	}
-	if !strings.HasPrefix(trimmed, "/") {
-		trimmed = "/" + trimmed
-	}
-	return trimmed
+	return "/" + base + "/" + name
 }
 
 func pathTypePtr(p networkingv1.PathType) *networkingv1.PathType {
